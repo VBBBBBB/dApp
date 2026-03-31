@@ -1,0 +1,39 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_30-3bbbf3509c487097d99f145cf6d56a8a02d03ce4",
+  "solcVersion": "0.8.30",
+  "solcLongVersion": "0.8.30+commit.73712a01",
+  "userSourceNameMap": {
+    "contracts/verify.sol": "project/contracts/verify.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "prague",
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode",
+            "evm.deployedBytecode",
+            "evm.methodIdentifiers",
+            "metadata"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/verify.sol": {
+        "content": "//SPDX-License-Identifier:MIT\r\n\r\npragma solidity 0.8.30;\r\n\r\ncontract CertVerify{\r\n\r\n    struct Cert{\r\n\r\n        string cID;\r\n\r\n        bytes32 fhash;\r\n\r\n    }\r\n\r\n    mapping(uint256 => Cert) public Certs;\r\n\r\n    function storeCredentials(uint256 sId,string memory cID,bytes32 _fhash) public {\r\n\r\n        Certs[sId] = Cert( cID, _fhash);\r\n\r\n    }\r\n\r\n}\r\n\r\n\r\n\r\n\r\n"
+      }
+    }
+  }
+}
