@@ -11,27 +11,53 @@ import { Shield, FileUp, CheckCircle, XCircle, Wallet, LayoutGrid, Search, Loade
 import './App.css';
 
 // --- CONTRACT CONFIG ---
-const CONTRACT_ADDRESS = "0xcE61526047eEaAF430D6d196AD3DaBA00445BC25";
+const CONTRACT_ADDRESS = "0x432411E14288c4F571A0e4a0B40e638fe6dcBBf4";
 const ABI = [
   {
     "inputs": [
-      { "internalType": "uint256", "name": "sId", "type": "uint256" },
-      { "internalType": "string", "name": "cID", "type": "string" },
-      { "internalType": "bytes32", "name": "_fhash", "type": "bytes32" }
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "name": "Certs",
+    "outputs": [
+      {
+        "internalType": "string",
+        "name": "cID",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "fhash",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_sId",
+        "type": "uint256"
+      },
+      {
+        "internalType": "string",
+        "name": "_cID",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "_fhash",
+        "type": "bytes32"
+      }
     ],
     "name": "storeCredentials",
     "outputs": [],
     "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "name": "Certs",
-    "outputs": [
-      { "internalType": "string", "name": "cID", "type": "string" },
-      { "internalType": "bytes32", "name": "fhash", "type": "bytes32" }
-    ],
-    "stateMutability": "view",
     "type": "function"
   }
 ];
