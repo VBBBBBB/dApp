@@ -36,6 +36,10 @@ const ABI = [
   }
 ];
 
+// --- PINATA CONFIG ---
+const PINATA_API_KEY = "3b051e96866c60013213";
+const PINATA_SECRET = "2974e6b94bd171ce6fa255551502cb1f104493f98c1abd0a42cc0eb0ad0bbcfa";
+
 function App() {
   const [account, setAccount] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -71,6 +75,27 @@ function App() {
     return '0x' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
+  const uploadToIPFS = async (file: File): Promise<string> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(
+      "https://api.pinata.cloud/pinning/pinFileToIPFS",
+      {
+        method: "POST",
+        headers: {
+          pinata_api_key: PINATA_API_KEY,
+          pinata_secret_api_key: PINATA_SECRET,
+        },
+        body: formData,
+      },
+    );
+
+    const data = await res.json();
+    if (!data.IpfsHash) throw new Error("Failed to upload to IPFS");
+    return data.IpfsHash;
+  };
+
   const handleIssue = async () => {
     if (!account || !issueId || !issueFile) return;
     setLoading(true);
@@ -81,12 +106,22 @@ function App() {
       const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
+      // 1. Hash File
+      setStatus({ type: 'idle', msg: 'Hashing the file...' });
       const fhash = await getFileHash(issueFile);
-      const tx = await contract.storeCredentials(BigInt(issueId), issueFile.name, fhash);
+      
+      // 2. Upload to IPFS
+      setStatus({ type: 'idle', msg: 'Storing file in IPFS (via Pinata)...' });
+      const cid = await uploadToIPFS(issueFile);
+      console.log("IPFS CID:", cid);
+
+      // 3. Store in Blockchain
+      setStatus({ type: 'idle', msg: 'Confirming with blockchain...' });
+      const tx = await contract.storeCredentials(BigInt(issueId), cid, fhash);
       
       setStatus({ type: 'success', msg: 'Transaction submitted! Waiting for confirmation...' });
       await tx.wait();
-      setStatus({ type: 'success', msg: `Successfully issued credential for Student ID: ${issueId}` });
+      setStatus({ type: 'success', msg: `Successfully issued credential! CID: ${cid}` });
     } catch (err: any) {
       console.error(err);
       setStatus({ type: 'error', msg: err.reason || err.message || 'Transaction failed' });
