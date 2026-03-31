@@ -175,7 +175,16 @@ function App() {
       if (onChainData.fhash === currentHash) {
         setStatus({ type: 'success', msg: '✅ Verification Successful! The certificate is authentic.' });
       } else {
-         setStatus({ type: 'error', msg: '❌ Verification Failed! The certificate has been tampered with or does not match.' });
+         const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.cID}`;
+         setStatus({ 
+           type: 'error', 
+           msg: `❌ Verification Failed! The certificate has been tampered with. You can view the authentic version here: `
+         });
+         // Making the link clickable in the UI is better than an alert in React
+         console.warn("Invalid file. Authentic version:", gatewayUrl);
+         if(window.confirm("Verification Failed! Would you like to view the authentic version of this certificate on IPFS?")) {
+            window.open(gatewayUrl, "_blank");
+         }
       }
     } catch (err: any) {
       console.error(err);
