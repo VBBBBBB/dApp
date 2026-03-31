@@ -117,7 +117,11 @@ function App() {
 
       // 3. Store in Blockchain
       setStatus({ type: 'idle', msg: 'Confirming with blockchain...' });
-      const tx = await contract.storeCredentials(BigInt(issueId), cid, fhash);
+      
+      // Adding manual gas settings to help MetaMask on custom networks
+      const tx = await contract.storeCredentials(BigInt(issueId), cid, fhash, {
+        gasLimit: 300000 
+      });
       
       setStatus({ type: 'success', msg: 'Transaction submitted! Waiting for confirmation...' });
       await tx.wait();
