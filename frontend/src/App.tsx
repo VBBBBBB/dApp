@@ -15,23 +15,21 @@ const CONTRACT_ADDRESS = "0xcE61526047eEaAF430D6d196AD3DaBA00445BC25";
 const ABI = [
   {
     "inputs": [
-      { "internalType": "uint256", "name": "_stid", "type": "uint256" },
-      { "internalType": "string", "name": "_certid", "type": "string" },
-      { "internalType": "bytes32", "name": "fhash", "type": "bytes32" }
+      { "internalType": "uint256", "name": "sId", "type": "uint256" },
+      { "internalType": "string", "name": "cID", "type": "string" },
+      { "internalType": "bytes32", "name": "_fhash", "type": "bytes32" }
     ],
-    "name": "issueCertificate",
+    "name": "storeCredentials",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
-    "inputs": [
-      { "internalType": "uint256", "name": "", "type": "uint256" }
-    ],
-    "name": "studentCred",
+    "inputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "name": "Certs",
     "outputs": [
-      { "internalType": "bytes32", "name": "hash", "type": "bytes32" },
-      { "internalType": "string", "name": "certid", "type": "string" }
+      { "internalType": "string", "name": "cID", "type": "string" },
+      { "internalType": "bytes32", "name": "fhash", "type": "bytes32" }
     ],
     "stateMutability": "view",
     "type": "function"
@@ -121,7 +119,7 @@ function App() {
       setStatus({ type: 'idle', msg: 'Confirming with blockchain...' });
       
       // Using manual gas settings for Hoodi L1
-      const tx = await contract.issueCertificate(BigInt(issueId), cid, fhash, {
+      const tx = await contract.storeCredentials(BigInt(issueId), cid, fhash, {
         gasLimit: 300000 
       });
       
@@ -143,26 +141,26 @@ function App() {
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner(); // View calls sometimes need signer on specific L1s
+      const signer = await provider.getSigner();
       const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-      // Fetch from mapping studentCred
-      const onChainData = await contract.studentCred(BigInt(verifyId));
+      // Fetch from mapping Certs
+      const onChainData = await contract.Certs(BigInt(verifyId));
       console.log("On-chain Record:", onChainData);
 
       const currentHash = await getFileHash(verifyFile);
 
-      // Compare hashes (index 0 in the new studentCred mapping)
-      if (onChainData.hash === currentHash || onChainData[0] === currentHash) {
+      // Compare hashes (index 1 is fhash in original contract)
+      if (onChainData.fhash === currentHash || onChainData[1] === currentHash) {
         setStatus({ type: 'success', msg: '✅ Verification Successful! The certificate is authentic.' });
       } else {
-         const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.certid || onChainData[1]}`;
+         const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.cID || onChainData[0]}`;
          setStatus({ 
            type: 'error', 
            msg: `❌ Verification Failed! The certificate has been tampered with.`
          });
          
-         if(onChainData[1] && window.confirm("Verification Failed! Would you like to view the authentic version of this certificate on IPFS?")) {
+         if((onChainData.cID || onChainData[0]) && window.confirm("Verification Failed! Would you like to view the authentic version of this certificate on IPFS?")) {
             window.open(gatewayUrl, "_blank");
          }
       }
