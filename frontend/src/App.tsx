@@ -11,53 +11,29 @@ import { Shield, FileUp, CheckCircle, XCircle, Wallet, LayoutGrid, Search, Loade
 import './App.css';
 
 // --- CONTRACT CONFIG ---
-const CONTRACT_ADDRESS = "0x432411E14288c4F571A0e4a0B40e638fe6dcBBf4";
+const CONTRACT_ADDRESS = "0xcE61526047eEaAF430D6d196AD3DaBA00445BC25";
 const ABI = [
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
+      { "internalType": "uint256", "name": "_stid", "type": "uint256" },
+      { "internalType": "string", "name": "_certid", "type": "string" },
+      { "internalType": "bytes32", "name": "fhash", "type": "bytes32" }
     ],
-    "name": "Certs",
-    "outputs": [
-      {
-        "internalType": "string",
-        "name": "cID",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "fhash",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
+    "name": "issueCertificate",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_sId",
-        "type": "uint256"
-      },
-      {
-        "internalType": "string",
-        "name": "_cID",
-        "type": "string"
-      },
-      {
-        "internalType": "bytes32",
-        "name": "_fhash",
-        "type": "bytes32"
-      }
+      { "internalType": "uint256", "name": "", "type": "uint256" }
     ],
-    "name": "storeCredentials",
-    "outputs": [],
-    "stateMutability": "nonpayable",
+    "name": "studentCred",
+    "outputs": [
+      { "internalType": "bytes32", "name": "hash", "type": "bytes32" },
+      { "internalType": "string", "name": "certid", "type": "string" }
+    ],
+    "stateMutability": "view",
     "type": "function"
   }
 ];
@@ -144,8 +120,8 @@ function App() {
       // 3. Store in Blockchain
       setStatus({ type: 'idle', msg: 'Confirming with blockchain...' });
       
-      // Adding manual gas settings to help MetaMask on custom networks
-      const tx = await contract.storeCredentials(BigInt(issueId), cid, fhash, {
+      // Using manual gas settings for Hoodi L1
+      const tx = await contract.issueCertificate(BigInt(issueId), cid, fhash, {
         gasLimit: 300000 
       });
       
@@ -167,22 +143,26 @@ function App() {
 
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+      const signer = await provider.getSigner(); // View calls sometimes need signer on specific L1s
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
 
-      const onChainData = await contract.Certs(BigInt(verifyId));
+      // Fetch from mapping studentCred
+      const onChainData = await contract.studentCred(BigInt(verifyId));
+      console.log("On-chain Record:", onChainData);
+
       const currentHash = await getFileHash(verifyFile);
 
-      if (onChainData.fhash === currentHash) {
+      // Compare hashes (index 0 in the new studentCred mapping)
+      if (onChainData.hash === currentHash || onChainData[0] === currentHash) {
         setStatus({ type: 'success', msg: '✅ Verification Successful! The certificate is authentic.' });
       } else {
-         const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.cID}`;
+         const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.certid || onChainData[1]}`;
          setStatus({ 
            type: 'error', 
-           msg: `❌ Verification Failed! The certificate has been tampered with. You can view the authentic version here: `
+           msg: `❌ Verification Failed! The certificate has been tampered with.`
          });
-         // Making the link clickable in the UI is better than an alert in React
-         console.warn("Invalid file. Authentic version:", gatewayUrl);
-         if(window.confirm("Verification Failed! Would you like to view the authentic version of this certificate on IPFS?")) {
+         
+         if(onChainData[1] && window.confirm("Verification Failed! Would you like to view the authentic version of this certificate on IPFS?")) {
             window.open(gatewayUrl, "_blank");
          }
       }
